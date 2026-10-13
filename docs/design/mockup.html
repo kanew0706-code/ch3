@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>匿名聊天室 — 畫面設計稿（深色現代）</title>
+<style>
+  /* ========== 設計 token ========== */
+  :root{
+    --bg-0:#111216;      /* 最外層 */
+    --bg-1:#17181d;      /* 房間列表欄 */
+    --bg-2:#1e2026;      /* 聊天區 */
+    --bg-3:#262931;      /* 浮起元素：輸入框、選單、卡片 */
+    --bg-4:#30343e;      /* hover */
+    --line:#2e313a;
+    --text-1:#eceef3;
+    --text-2:#a9adb9;
+    --text-3:#6f7482;
+    --accent:#8b7cff;
+    --accent-soft:rgba(139,124,255,.14);
+    --accent-line:rgba(139,124,255,.45);
+    --own-bg:rgba(139,124,255,.07);
+    --warn:#ffb547;
+    --danger:#ff6b6b;
+    --ok:#3ddc97;
+    --radius-s:6px; --radius-m:10px; --radius-l:16px;
+    /* 名字顏色（12 色，都在深底上可讀） */
+    --n1:#ff8a7a; --n2:#ffb547; --n3:#e6d55a; --n4:#7bdc6b; --n5:#3ddc97; --n6:#4fd6e0;
+    --n7:#5eb0ff; --n8:#8b9dff; --n9:#b98bff; --n10:#f08bff; --n11:#ff7fb6; --n12:#c9a27a;
+    --font: "Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+    --mono: ui-monospace,"Cascadia Code",Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg-0);color:var(--text-1);font:14px/1.55 var(--font)}
+  button{font:inherit;color:inherit;cursor:pointer}
+  a{color:#8fb8ff}
+
+  /* ========== 設計稿外框 ========== */
+  .doc{max-width:1360px;margin:0 auto;padding:40px 32px 80px}
+  .doc>header h1{margin:0 0 6px;font-size:26px}
+  .doc>header p{margin:0;color:var(--text-2)}
+  .section{margin-top:56px}
+  .section>h2{font-size:18px;margin:0 0 4px}
+  .section>.sub{color:var(--text-2);margin:0 0 18px;font-size:13px}
+  .tag{display:inline-block;font:12px var(--mono);color:var(--accent);background:var(--accent-soft);padding:1px 7px;border-radius:99px;margin-right:6px}
+  .row{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start}
+  .caption{font-size:12px;color:var(--text-3);margin-top:8px;text-align:center}
+  .notes{margin-top:14px;color:var(--text-2);font-size:13px;padding-left:18px}
+  .notes li{margin:3px 0}
+  .palette{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+  .sw{width:92px;font-size:11px;color:var(--text-2)}
+  .sw i{display:block;height:36px;border-radius:8px;border:1px solid var(--line);margin-bottom:4px}
+
+  /* ========== 共用元件 ========== */
+  .frame{background:var(--bg-2);border:1px solid var(--line);border-radius:14px;overflow:hidden;position:relative;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+  .desktop{width:1280px;height:760px;display:grid;grid-template-columns:232px 1fr 236px}
+  .phone{width:375px;height:780px;border-radius:34px;border:8px solid #050507;display:flex;flex-direction:column}
+  .btn{border:0;border-radius:var(--radius-s);padding:8px 14px;background:var(--bg-3)}
+  .btn:hover{background:var(--bg-4)}
+  .btn.primary{background:var(--accent);color:#14121f;font-weight:600}
+  .btn.primary:disabled{background:#3a3850;color:#77738f;cursor:not-allowed}
+  .btn.ghost{background:transparent;color:var(--text-2)}
+  .btn.ghost:hover{background:var(--bg-3);color:var(--text-1)}
+  .icon-btn{border:0;background:transparent;width:32px;height:32px;border-radius:8px;display:inline-grid;place-items:center;color:var(--text-2);font-size:16px}
+  .icon-btn:hover{background:var(--bg-3);color:var(--text-1)}
+  .badge{min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--accent);color:#14121f;font-size:11px;font-weight:700;display:inline-grid;place-items:center}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--danger);position:absolute;top:5px;right:5px;box-shadow:0 0 0 2px var(--bg-1)}
+
+  /* 橫幅 */
+  .banner{font-size:12.5px;padding:7px 16px;display:flex;align-items:center;gap:8px}
+  .banner.demo{background:rgba(255,181,71,.12);color:var(--warn);border-bottom:1px solid rgba(255,181,71,.25)}
+  .banner.conn{background:rgba(255,107,107,.13);color:#ffb0b0;border-bottom:1px solid rgba(255,107,107,.3)}
+  .spinner{width:12px;height:12px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;display:inline-block}
+
+  /* ========== 左欄：房間列表 ========== */
+  .rooms{background:var(--bg-1);border-right:1px solid var(--line);display:flex;flex-direction:column}
+  .brand{padding:16px 16px 12px;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
+  .brand .logo{width:24px;height:24px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#5eb0ff)}
+  .rooms h4{margin:10px 16px 6px;font-size:11px;letter-spacing:.08em;color:var(--text-3);font-weight:600}
+  .room{margin:1px 8px;padding:7px 8px 7px 10px;border-radius:8px;display:flex;align-items:center;gap:8px;color:var(--text-2)}
+  .room:hover{background:var(--bg-3);color:var(--text-1)}
+  .room.active{background:var(--accent-soft);color:var(--text-1)}
+  .room .hash{color:var(--text-3);width:14px;text-align:center}
+  .room .name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .room.unread .name{color:var(--text-1);font-weight:600}
+  .room .x{opacity:0;border:0;background:transparent;color:var(--text-3);width:20px;height:20px;border-radius:5px}
+  .room:hover .x,.room.show-x .x{opacity:1}
+  .room .x:hover{background:var(--bg-4);color:var(--text-1)}
+  .new-room{margin:10px 8px;padding:8px 10px;border:1px dashed var(--line);border-radius:8px;background:transparent;color:var(--text-2);text-align:left}
+  .new-room:hover{border-color:var(--accent-line);color:var(--accent)}
+  .me-card{margin-top:auto;padding:12px 14px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px;font-size:13px}
+  .avatar{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:12px;color:#14121f;flex:none}
+
+  /* ========== 中間：聊天區 ========== */
+  .chat{display:flex;flex-direction:column;min-width:0;position:relative}
+  .topbar{height:52px;padding:0 12px 0 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:6px}
+  .topbar .title{font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+  .topbar .title small{font-weight:400;color:var(--text-3);font-size:12px}
+  .copy-link{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:transparent;color:var(--text-2);border-radius:7px;padding:5px 10px;font-size:12.5px}
+  .copy-link:hover{border-color:var(--accent-line);color:var(--text-1)}
+  .leave{color:var(--danger)!important}
+  .messages{flex:1;overflow:hidden;padding:12px 0 8px;position:relative}
+  .msg{position:relative;padding:6px 18px 6px 62px;margin:1px 0}
+  .msg:hover,.msg.hover{background:rgba(255,255,255,.025)}
+  .msg.own{background:var(--own-bg);box-shadow:inset 3px 0 0 var(--accent-line)}
+  .msg.flash{background:rgba(255,181,71,.12);box-shadow:inset 3px 0 0 var(--warn)}
+  .msg .avatar{position:absolute;left:18px;top:8px;width:32px;height:32px;font-size:13px}
+  .msg .meta{display:flex;align-items:baseline;gap:8px}
+  .msg .who{font-weight:700;cursor:pointer}
+  .msg .who:hover{text-decoration:underline}
+  .msg .you{color:var(--text-3);font-weight:400;font-size:12px}
+  .msg .time{color:var(--text-3);font-size:11.5px;font-variant-numeric:tabular-nums}
+  .msg .text{white-space:pre-wrap;word-break:break-word;color:var(--text-1)}
+  .msg.cont{padding-top:1px}
+  .msg.cont .time-hover{position:absolute;left:18px;width:32px;text-align:center;font-size:10.5px;color:var(--text-3);top:4px;opacity:0}
+  .msg.cont:hover .time-hover{opacity:1}
+  .quote{display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--text-2);margin:2px 0 3px;cursor:pointer;max-width:560px}
+  .quote::before{content:"";width:22px;height:10px;border:2px solid var(--text-3);border-right:0;border-bottom:0;border-radius:6px 0 0 0;margin-top:6px;flex:none;opacity:.6}
+  .quote b{font-weight:600}
+  .quote span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-3)}
+  .quote:hover span{color:var(--text-2)}
+  .reactions{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap}
+  .react{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line);background:var(--bg-3);border-radius:99px;padding:1px 8px;font-size:12.5px;color:var(--text-2);position:relative}
+  .react.mine{border-color:var(--accent-line);background:var(--accent-soft);color:var(--text-1)}
+  .react b{font-weight:600;font-variant-numeric:tabular-nums}
+  .tooltip{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#0b0c0f;color:var(--text-1);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.5);z-index:5}
+  .tooltip::after{content:"";position:absolute;top:100%;left:50%;margin-left:-5px;border:5px solid transparent;border-top-color:#0b0c0f}
+  .actions{position:absolute;right:18px;top:-14px;display:flex;align-items:center;gap:2px;background:var(--bg-3);border:1px solid var(--line);border-radius:9px;padding:3px;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+  .actions button{border:0;background:transparent;border-radius:6px;height:28px;min-width:28px;padding:0 6px;font-size:15px}
+  .actions button:hover{background:var(--bg-4)}
+  .actions .sep{width:1px;height:18px;background:var(--line);margin:0 3px}
+  .actions .reply{font-size:12.5px;color:var(--text-2)}
+  .sys{text-align:center;color:var(--text-3);font-size:12px;margin:12px 18px;display:flex;align-items:center;gap:12px}
+  .sys::before,.sys::after{content:"";flex:1;height:1px;background:var(--line)}
+  .new-msgs{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);background:var(--accent);color:#14121f;border:0;border-radius:99px;padding:6px 14px;font-size:12.5px;font-weight:600;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+  .menu{position:absolute;background:var(--bg-3);border:1px solid var(--line);border-radius:10px;padding:5px;min-width:170px;box-shadow:0 12px 32px rgba(0,0,0,.55);z-index:6;font-size:13px}
+  .menu .head{padding:6px 10px 8px;border-bottom:1px solid var(--line);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+  .menu .item{padding:7px 10px;border-radius:6px;display:flex;gap:8px;align-items:center}
+  .menu .item:hover,.menu .item.hl{background:var(--bg-4)}
+  .menu .item.danger{color:var(--danger)}
+  .empty{height:100%;display:grid;place-items:center;text-align:center;color:var(--text-3)}
+  .empty .big{font-size:36px;margin-bottom:8px;opacity:.7}
+  .empty b{display:block;color:var(--text-2);font-size:15px;margin-bottom:4px}
+
+  /* 輸入區 */
+  .composer{padding:0 16px 16px}
+  .replying{display:flex;align-items:center;gap:8px;background:var(--bg-3);border-radius:10px 10px 0 0;padding:7px 10px 7px 14px;font-size:12.5px;color:var(--text-2);border:1px solid var(--line);border-bottom:0}
+  .replying span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .input-box{display:flex;align-items:flex-end;gap:8px;background:var(--bg-3);border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 14px}
+  .replying+.input-box{border-radius:0 0 12px 12px}
+  .input-box:focus-within{border-color:var(--accent-line)}
+  .input-box textarea{flex:1;resize:none;border:0;background:transparent;color:var(--text-1);font:inherit;outline:0;min-height:22px;padding:4px 0}
+  .input-box textarea::placeholder{color:var(--text-3)}
+  .counter{font-size:11.5px;color:var(--text-3);font-variant-numeric:tabular-nums;padding:5px 2px}
+  .counter.warn{color:var(--warn)}
+  .counter.over{color:var(--danger);font-weight:700}
+  .send{width:36px;height:36px;border:0;border-radius:9px;background:var(--accent);color:#14121f;font-size:16px;font-weight:700}
+  .send:disabled{background:#3a3850;color:#77738f;cursor:not-allowed}
+  .hint{font-size:12px;margin:6px 4px 0;display:flex;gap:6px;align-items:center}
+  .hint.warn{color:var(--warn)}
+  .hint.muted{color:var(--text-3)}
+
+  /* ========== 右欄：線上名單 ========== */
+  .members{background:var(--bg-1);border-left:1px solid var(--line);padding:14px 10px}
+  .members h4{margin:0 8px 10px;font-size:11px;letter-spacing:.08em;color:var(--text-3);font-weight:600}
+  .member{display:flex;align-items:center;gap:10px;padding:6px 8px;border-radius:8px;position:relative}
+  .member:hover{background:var(--bg-3)}
+  .member .avatar{width:26px;height:26px;font-size:11px}
+  .member .avatar::after{content:"";position:absolute;width:8px;height:8px;border-radius:50%;background:var(--ok);margin:18px 0 0 18px;box-shadow:0 0 0 2px var(--bg-1)}
+  .member .nm{font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .member .you{color:var(--text-3);font-weight:400;font-size:12px}
+  .member.hidden .avatar{background:#3a3d46!important;color:#6f7482}
+  .member.hidden .avatar::after{background:var(--text-3)}
+  .member.hidden .nm{color:var(--text-3)!important;font-weight:400;text-decoration:line-through}
+  .member .unhide{border:0;background:var(--bg-3);color:var(--text-2);font-size:11.5px;border-radius:6px;padding:2px 7px}
+  .member .unhide:hover{color:var(--text-1);background:var(--bg-4)}
+  .member.away .nm::after{content:" · 連線不穩";font-weight:400;font-size:11px;color:var(--text-3)}
+
+  /* ========== 浮動通知 ========== */
+  .toasts{position:absolute;right:252px;top:64px;display:flex;flex-direction:column;gap:8px;z-index:8}
+  .toast{display:flex;align-items:center;gap:10px;background:var(--bg-3);border:1px solid var(--line);border-left:3px solid var(--ok);border-radius:10px;padding:9px 12px;font-size:13px;box-shadow:0 10px 28px rgba(0,0,0,.5);min-width:230px}
+  .toast.out{border-left-color:var(--text-3)}
+  .toast .room-n{color:var(--text-3)}
+  .toast .close{margin-left:auto;color:var(--text-3);border:0;background:transparent}
+
+  /* ========== 輸入代號畫面 ========== */
+  .entry{display:grid;place-items:center;height:100%;background:
+      radial-gradient(600px 300px at 30% 10%,rgba(139,124,255,.18),transparent 70%),
+      radial-gradient(500px 300px at 80% 90%,rgba(94,176,255,.12),transparent 70%),var(--bg-2)}
+  .entry-card{width:380px;background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius-l);padding:30px 28px 24px;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+  .entry-card .logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#5eb0ff);margin-bottom:14px}
+  .entry-card h3{margin:0 0 4px;font-size:21px}
+  .entry-card p.desc{margin:0 0 20px;color:var(--text-2);font-size:13px}
+  .dest{display:flex;align-items:center;gap:8px;background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:10px;padding:9px 12px;margin-bottom:16px;font-size:13px}
+  .dest b{color:var(--text-1)}
+  label.fl{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-2);margin-bottom:6px}
+  .field{width:100%;background:var(--bg-3);border:1px solid var(--line);border-radius:10px;padding:11px 12px;color:var(--text-1);font:inherit;font-size:15px;outline:0}
+  .field:focus{border-color:var(--accent-line);box-shadow:0 0 0 3px var(--accent-soft)}
+  .field.err{border-color:rgba(255,107,107,.6)}
+  .err-msg{color:var(--danger);font-size:12px;margin-top:6px}
+  .entry-card .btn.primary{width:100%;padding:11px;margin-top:16px;font-size:15px;border-radius:10px}
+  .privacy{margin-top:16px;font-size:12px;color:var(--text-3);display:flex;gap:6px}
+
+  /* ========== 建立房間視窗 ========== */
+  .overlay{position:absolute;inset:0;background:rgba(5,6,9,.6);display:grid;place-items:center;backdrop-filter:blur(2px)}
+  .dialog{width:420px;background:var(--bg-1);border:1px solid var(--line);border-radius:var(--radius-l);padding:22px 22px 18px;box-shadow:0 24px 60px rgba(0,0,0,.6)}
+  .dialog h3{margin:0 0 4px;font-size:17px;display:flex;justify-content:space-between;align-items:center}
+  .dialog p{margin:0 0 16px;color:var(--text-2);font-size:13px}
+  .dialog .actions-row{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+  .link-box{display:flex;gap:8px;align-items:center;background:var(--bg-3);border:1px solid var(--line);border-radius:10px;padding:6px 6px 6px 12px}
+  .link-box code{flex:1;font:12.5px var(--mono);color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .copied{color:var(--ok);font-size:12.5px;margin-top:8px;display:flex;align-items:center;gap:6px}
+  .stage{position:relative;width:620px;height:380px;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--bg-2)}
+
+  /* ========== 手機 ========== */
+  .m-top{height:52px;display:flex;align-items:center;gap:4px;padding:0 8px;border-bottom:1px solid var(--line);background:var(--bg-2)}
+  .m-top .title{flex:1;font-weight:700;font-size:15px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-left:4px}
+  .m-online{margin:0 auto;display:flex;justify-content:center;padding:6px 0;border-bottom:1px solid var(--line);background:var(--bg-2)}
+  .m-online button{border:1px solid var(--line);background:var(--bg-3);border-radius:99px;padding:3px 12px;font-size:12.5px;color:var(--text-2)}
+  .m-online button .g{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--ok);margin-right:6px}
+  .phone .messages{flex:1}
+  .phone .msg{padding:6px 14px 6px 54px}
+  .phone .msg .avatar{left:14px;width:30px;height:30px}
+  .phone .composer{padding:0 10px 14px;background:var(--bg-2)}
+  .keyboard{height:200px;background:#0b0c0f;border-top:1px solid var(--line);display:grid;grid-template-rows:repeat(4,1fr);gap:6px;padding:8px 5px}
+  .keyboard div{display:flex;gap:5px}
+  .keyboard i{flex:1;background:#24262d;border-radius:5px}
+  .drawer{position:absolute;inset:0;background:rgba(5,6,9,.55);display:flex}
+  .drawer .panel{width:280px;background:var(--bg-1);height:100%;display:flex;flex-direction:column;box-shadow:12px 0 32px rgba(0,0,0,.5)}
+  .sheet{position:absolute;left:0;right:0;top:96px;background:var(--bg-1);border-bottom:1px solid var(--line);padding:10px 8px 14px;box-shadow:0 18px 40px rgba(0,0,0,.6)}
+  .sheet-backdrop{position:absolute;inset:96px 0 0 0;background:rgba(5,6,9,.5)}
+  .longpress{position:absolute;left:12px;right:12px;bottom:110px;background:var(--bg-3);border:1px solid var(--line);border-radius:16px;padding:10px;box-shadow:0 20px 50px rgba(0,0,0,.7)}
+  .longpress .emoji-row{display:flex;justify-content:space-around;padding:4px 0 10px;border-bottom:1px solid var(--line);font-size:24px}
+  .longpress .item{padding:10px 8px;display:flex;gap:10px;font-size:14px}
+  .lp-dim{position:absolute;inset:0;background:rgba(5,6,9,.55)}
+  .phone .toasts{right:10px;left:10px;top:104px}
+  .phone .toast{min-width:0}
+
+  /* ========== 瀏覽器分頁示意 ========== */
+  .tabbar{display:flex;gap:4px;background:#0b0c0f;padding:8px 10px 0;border-radius:12px 12px 0 0;width:620px}
+  .tab{background:#1b1c21;color:var(--text-2);font-size:12.5px;padding:8px 14px;border-radius:9px 9px 0 0;display:flex;gap:8px;align-items:center;min-width:180px}
+  .tab.active{background:var(--bg-2);color:var(--text-1)}
+  .tab .fav{width:14px;height:14px;border-radius:4px;background:linear-gradient(135deg,var(--accent),#5eb0ff)}
+  .tabbody{width:620px;background:var(--bg-2);border:1px solid var(--line);border-top:0;border-radius:0 0 12px 12px;padding:18px;color:var(--text-2);font-size:13px}
+</style>
+</head>
+<body>
+<div class="doc">
+
+<header>
+  <h1>匿名聊天室：畫面設計稿</h1>
+  <p>風格：深色現代（Discord 式）。對照 <code>docs/architecture.md</code> 第 7 節「畫面清單」，每個區塊上方的 <span class="tag">7.x</span> 標出對應的小節。這份是靜態示意，按鈕不會動。</p>
+</header>
+
+<!-- ============================================================ -->
+<section class="section">
+  <h2>設計基準</h2>
+  <p class="sub">之後 /frontend-design 實作時沿用這些顏色。名字顏色有 12 種，每個人的顏色由 clientId 算出來。</p>
+  <div class="palette">
+    <div class="sw"><i style="background:var(--bg-0)"></i>bg-0 #111216</div>
+    <div class="sw"><i style="background:var(--bg-1)"></i>bg-1 #17181d</div>
+    <div class="sw"><i style="background:var(--bg-2)"></i>bg-2 #1e2026</div>
+    <div class="sw"><i style="background:var(--bg-3)"></i>bg-3 #262931</div>
+    <div class="sw"><i style="background:var(--accent)"></i>accent #8b7cff</div>
+    <div class="sw"><i style="background:var(--warn)"></i>warn #ffb547</div>
+    <div class="sw"><i style="background:var(--danger)"></i>danger #ff6b6b</div>
+    <div class="sw"><i style="background:var(--ok)"></i>ok #3ddc97</div>
+  </div>
+  <div class="palette">
+    <div class="sw"><i style="background:var(--n1)"></i>名字 1</div><div class="sw"><i style="background:var(--n2)"></i>名字 2</div>
+    <div class="sw"><i style="background:var(--n3)"></i>名字 3</div><div class="sw"><i style="background:var(--n4)"></i>名字 4</div>
+    <div class="sw"><i style="background:var(--n5)"></i>名字 5</div><div class="sw"><i style="background:var(--n6)"></i>名字 6</div>
+    <div class="sw"><i style="background:var(--n7)"></i>名字 7</div><div class="sw"><i style="background:var(--n8)"></i>名字 8</div>
+    <div class="sw"><i style="background:var(--n9)"></i>名字 9</div><div class="sw"><i style="background:var(--n10)"></i>名字 10</div>
+    <div class="sw"><i style="background:var(--n11)"></i>名字 11</div><div class="sw"><i style="background:var(--n12)"></i>名字 12</div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section class="section">
+  <h2><span class="tag">7.1</span>輸入代號畫面</h2>
+  <p class="sub">左：從私人房間連結進來（有自動帶入的代號、可以進入）。右：代號只有空白時（按鈕不能按、顯示原因）。</p>
+  <div class="row">
+    <div>
+      <div class="frame" style="width:600px;height:560px;display:flex;flex-direction:column">
+        <div class="banner demo">⚠ 展示模式：只能和這個瀏覽器的其他分頁聊天</div>
+        <div class="entry" style="flex:1">
+          <div class="entry-card">
+            <div class="logo"></div>
+            <h3>匿名聊天室</h3>
+            <p class="desc">不用註冊，取個代號就能聊。訊息不會被保存，只看得到你進來之後的對話。</p>
+            <div class="dest">🔒 你將進入：<b>週五讀書會</b></div>
+            <label class="fl"><span>你的代號</span><span>2 / 9</span></label>
+            <input class="field" value="小明">
+            <button class="btn primary">進入聊天室</button>
+            <div class="privacy">🛡 請勿傳送個人資料或機密，拿到連結的人都能進入房間。</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">正常狀態：上次的代號「小明」已自動帶入，按 Enter 也能進入</div>
+    </div>
+    <div>
+      <div class="frame" style="width:600px;height:560px;display:flex;flex-direction:column">
+        <div class="banner demo">⚠ 展示模式：只能和這個瀏覽器的其他分頁聊天</div>
+        <div class="entry" style="flex:1">
+          <div class="entry-card">
+            <div class="logo"></div>
+            <h3>匿名聊天室</h3>
+            <p class="desc">不用註冊，取個代號就能聊。訊息不會被保存，只看得到你進來之後的對話。</p>
+            <label class="fl"><span>你的代號</span><span>3 / 9</span></label>
+            <input class="field err" value="   ">
+            <div class="err-msg">代號不能只有空白</div>
+            <button class="btn primary" disabled>進入聊天室</button>
+            <div class="privacy">🛡 請勿傳送個人資料或機密，拿到連結的人都能進入房間。</div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">錯誤狀態：直接打開網站（沒有「你將進入」），代號全是空白</div>
+    </div>
+  </div>
+  <ul class="notes">
+    <li>字數到 9 / 9 時不能再輸入，計數會變成警告色。</li>
+    <li>「展示模式」橫幅只在階段一出現。</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section class="section">
+  <h2><span class="tag">7.2</span><span class="tag">7.5</span>聊天主畫面：電腦版</h2>
+  <p class="sub">一張圖同時畫出多種狀態：滑鼠停在訊息上、表情提示、名字選單、回覆中、浮動通知，方便一次檢查。實際上這些不會同時出現。</p>
+  <div class="frame desktop">
+
+    <!-- 左欄：房間列表 -->
+    <aside class="rooms">
+      <div class="brand"><span class="logo"></span>匿名聊天室</div>
+      <h4>房間</h4>
+      <div class="room"><span class="hash">#</span><span class="name">大廳</span></div>
+      <div class="room active show-x"><span class="hash">🔒</span><span class="name">週五讀書會</span><button class="x" title="離開這個房間">×</button></div>
+      <div class="room unread"><span class="hash">🔒</span><span class="name">房間 k3f9</span><span class="badge">3</span></div>
+      <div class="room unread"><span class="hash">🔒</span><span class="name">期末專題討論小組</span><span class="badge">12</span></div>
+      <button class="new-room">＋ 開新房間</button>
+      <div class="me-card">
+        <span class="avatar" style="background:var(--n8)">明</span>
+        <div><div style="font-weight:600">小明</div><div style="font-size:11.5px;color:var(--text-3)">這是你</div></div>
+      </div>
+    </aside>
+
+    <!-- 中間：聊天區 -->
+    <main class="chat">
+      <div class="banner demo">⚠ 展示模式：只能和這個瀏覽器的其他分頁聊天</div>
+      <div class="topbar">
+        <div class="title">🔒 週五讀書會 <small>私人房間</small></div>
+        <button class="copy-link">🔗 複製連結</button>
+        <button class="icon-btn" title="靜音">🔔</button>
+        <button class="btn ghost leave">離開</button>
+      </div>
+      <div class="banner conn"><span class="spinner"></span>連線中斷，重新連線中…</div>
+
+      <div class="messages">
+        <div class="msg">
+          <span class="avatar" style="background:var(--n4)">華</span>
+          <div class="meta"><span class="who" style="color:var(--n4)">小華</span><span class="time">20:12</span></div>
+          <div class="text">今天晚上要不要一起讀第三章？我整理了重點在這裡 <a href="#">https://hackmd.io/abc123</a></div>
+          <div class="reactions">
+            <span class="react mine">👍 <b>3</b>
+              <span class="tooltip">小明（你）、阿傑、小美 按了 👍</span>
+            </span>
+            <span class="react">❤️ <b>1</b></span>
+          </div>
+        </div>
+
+        <div class="msg">
+          <span class="avatar" style="background:var(--n11)">美</span>
+          <div class="meta"><span class="who" style="color:var(--n11)">小美</span><span class="time">20:13</span></div>
+          <div class="text">好啊！我九點後可以</div>
+        </div>
+        <div class="msg cont"><span class="time-hover">20:13</span>
+          <div class="text">先說我第二節還沒看完 😂</div>
+        </div>
+
+        <div class="msg own">
+          <span class="avatar" style="background:var(--n8)">明</span>
+          <div class="quote"><b style="color:var(--n4)">小華</b><span>今天晚上要不要一起讀第三章？我整理了重點在這裡 https://hackmd.io/…</span></div>
+          <div class="meta"><span class="who" style="color:var(--n8)">小明</span><span class="you">（你）</span><span class="time">20:14</span></div>
+          <div class="text">讚，我九點準時上線</div>
+        </div>
+
+        <div class="msg hover">
+          <span class="avatar" style="background:var(--n6)">傑</span>
+          <div class="actions">
+            <button class="reply">↩ 回覆</button><span class="sep"></span>
+            <button>👍</button><button>❤️</button><button>😂</button><button>😮</button><button>😢</button>
+          </div>
+          <div class="meta"><span class="who" style="color:var(--n6)">阿傑</span><span class="time">20:15</span></div>
+          <div class="text">我也來～
+第三章的習題 3-7 有人會嗎</div>
+          <div class="reactions"><span class="react">😮 <b>2</b></span></div>
+        </div>
+
+        <div class="sys">連線中斷期間的訊息無法顯示</div>
+
+        <div class="msg">
+          <span class="avatar" style="background:var(--n2)">明</span>
+          <div class="meta">
+            <span class="who" style="color:var(--n2)">小明</span><span class="time">20:18</span>
+          </div>
+          <div class="text">我是另一個小明，名字顏色不一樣 👋</div>
+          <!-- 名字選單 -->
+          <div class="menu" style="left:62px;top:28px">
+            <div class="head"><span class="avatar" style="background:var(--n2);width:22px;height:22px;font-size:10px">明</span><b style="color:var(--n2)">小明</b></div>
+            <div class="item danger hl">🚫 隱藏這個人</div>
+          </div>
+        </div>
+
+        <button class="new-msgs">↓ 有新訊息</button>
+      </div>
+
+      <div class="composer">
+        <div class="replying">↩ 回覆 <b style="color:var(--n6)">阿傑</b><span>：我也來～ 第三章的習題 3-7 有人會嗎</span><button class="icon-btn" style="width:24px;height:24px">×</button></div>
+        <div class="input-box">
+          <textarea rows="1">3-7 要先用第二節的公式把式子展開，再代入邊界條件，然後……</textarea>
+          <span class="counter warn">287 / 300</span>
+          <button class="send" title="送出">➤</button>
+        </div>
+        <div class="hint warn">⏱ 送太快了，請稍等</div>
+      </div>
+
+      <!-- 浮動通知 -->
+      <div class="toasts" style="right:16px;top:118px">
+        <div class="toast">🟢 <span><b style="color:var(--n10)">阿凱</b> 進入了 <span class="room-n">週五讀書會</span></span><button class="close">×</button></div>
+        <div class="toast out">⚪ <span><b style="color:var(--n12)">Leo</b> 離開了 <span class="room-n">大廳</span></span><button class="close">×</button></div>
+        <div class="toast">🟢 <span><b>3 人</b>進入了 <span class="room-n">大廳</span></span><button class="close">×</button></div>
+      </div>
+    </main>
+
+    <!-- 右欄：線上名單 -->
+    <aside class="members">
+      <h4>線上 — 6 人</h4>
+      <div class="member"><span class="avatar" style="background:var(--n8)">明</span><span class="nm" style="color:var(--n8)">小明 <span class="you">（你）</span></span></div>
+      <div class="member"><span class="avatar" style="background:var(--n4)">華</span><span class="nm" style="color:var(--n4)">小華</span></div>
+      <div class="member"><span class="avatar" style="background:var(--n11)">美</span><span class="nm" style="color:var(--n11)">小美</span></div>
+      <div class="member"><span class="avatar" style="background:var(--n6)">傑</span><span class="nm" style="color:var(--n6)">阿傑</span></div>
+      <div class="member"><span class="avatar" style="background:var(--n2)">明</span><span class="nm" style="color:var(--n2)">小明</span></div>
+      <div class="member hidden"><span class="avatar">洗</span><span class="nm">洗版仔</span><button class="unhide">取消隱藏</button></div>
+    </aside>
+  </div>
+
+  <ul class="notes">
+    <li><b>房間列表</b>：大廳永遠在第一個，沒有 ×。私人房間滑鼠移上去才出現 ×。未讀的房間名稱變粗並顯示數字。</li>
+    <li><b>自己的訊息</b>：淡紫色底、左邊有細線、名字後面有「（你）」。</li>
+    <li><b>同一個人連續發言</b>：省略頭像和名字，滑鼠移上去時左邊顯示時間（小美的第二則）。</li>
+    <li><b>回覆</b>：引用區塊在訊息上方，點了會捲到原訊息並短暫標亮（見下方「標亮」示意）。</li>
+    <li><b>表情</b>：自己按過的那一顆有紫色框。滑鼠移上去顯示是誰按的。</li>
+    <li><b>名字選單</b>：點別人的名字出現。點自己的名字不會有選單。</li>
+    <li><b>被隱藏的人</b>：在名單裡變灰並加刪除線，旁邊有「取消隱藏」，他的訊息、表情、進出通知都不會出現。</li>
+    <li><b>斷線時</b>：紅色連線狀態列出現、送出按鈕不能按；恢復後狀態列消失，聊天區插入灰字分隔線。</li>
+    <li><b>字數</b>：250 字以下不顯示，250～300 顯示黃色，超過 300 變紅色，送出按鈕不能按。</li>
+    <li><b>浮動通知</b>：右上角（不擋輸入框），4 秒消失；2 秒內 3 則以上會合併。</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section class="section">
+  <h2><span class="tag">7.2</span>聊天區的其他狀態</h2>
+  <p class="sub">左：剛進房間時的空狀態。中：點引用後原訊息被標亮。右：送出按鈕不能按的情況（超過字數）。</p>
+  <div class="row">
+    <div>
+      <div class="frame" style="width:420px;height:300px;display:flex;flex-direction:column">
+        <div class="topbar"><div class="title"># 大廳</div><button class="icon-btn">🔕</button><button class="btn ghost leave">離開</button></div>
+        <div class="messages"><div class="empty"><div><div class="big">💬</div><b>還沒有訊息</b>你進來之前的訊息不會顯示。</div></div></div>
+      </div>
+      <div class="caption">空狀態（大廳沒有「複製連結」；🔕 為已靜音）</div>
+    </div>
+    <div>
+      <div class="frame" style="width:420px;height:300px;display:flex;flex-direction:column;justify-content:center">
+        <div class="msg flash">
+          <span class="avatar" style="background:var(--n4)">華</span>
+          <div class="meta"><span class="who" style="color:var(--n4)">小華</span><span class="time">20:12</span></div>
+          <div class="text">今天晚上要不要一起讀第三章？</div>
+        </div>
+      </div>
+      <div class="caption">被引用的原訊息標亮約 1.5 秒後淡出</div>
+    </div>
+    <div>
+      <div class="frame" style="width:420px;height:300px;display:flex;flex-direction:column;justify-content:flex-end">
+        <div class="composer" style="padding-top:16px">
+          <div class="input-box">
+            <textarea rows="2">（一段很長很長的文字……）</textarea>
+            <span class="counter over">312 / 300</span>
+            <button class="send" disabled>➤</button>
+          </div>
+          <div class="hint muted">電腦：Enter 送出 · Shift+Enter 換行</div>
+        </div>
+      </div>
+      <div class="caption">超過 300 字：計數變紅、送出按鈕不能按</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section class="section">
+  <h2><span class="tag">7.3</span>建立房間視窗</h2>
+  <p class="sub">左：建立前。右：建立後，顯示連結並已複製。</p>
+  <div class="row">
+    <div>
+      <div class="stage">
+        <div class="overlay">
+          <div class="dialog">
+            <h3>開新房間 <button class="icon-btn">×</button></h3>
+            <p>只有拿到連結的人進得來。房間不會出現在任何公開列表。</p>
+            <label class="fl"><span>房間名稱（可不填）</span><span>5 / 20</span></label>
+            <input class="field" value="週五讀書會" placeholder="例如：週五讀書會">
+            <div class="actions-row"><button class="btn ghost">取消</button><button class="btn primary">建立</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="stage">
+        <div class="overlay">
+          <div class="dialog">
+            <h3>房間建立好了 <button class="icon-btn">×</button></h3>
+            <p>把連結傳給想邀請的人。你已經在這個房間裡了。</p>
+            <div class="link-box">
+              <code>https://you.github.io/ch3/#/r/k3f9xa2m7qpd?name=週五讀書會</code>
+              <button class="btn primary" style="padding:6px 12px">複製連結</button>
+            </div>
+            <div class="copied">✓ 已複製</div>
+            <div class="actions-row"><button class="btn">完成</button></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ul class="notes">
+    <li>名稱沒填時，會自動命名為「房間 k3f9」（ID 前 4 碼）。</li>
+    <li>手機上如果可以用系統分享選單，「複製連結」會改成「分享」。</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section class="section">
+  <h2><span class="tag">7.4</span>手機版</h2>
+  <p class="sub">由左到右：一般聊天畫面（鍵盤打開）、房間列表抽屜、線上名單展開、長按訊息選單。</p>
+  <div class="row">
+
+    <!-- 1. 一般 -->
+    <div>
+      <div class="frame phone">
+        <div class="m-top">
+          <button class="icon-btn" style="position:relative">☰<span class="dot"></span></button>
+          <div class="title">🔒 週五讀書會</div>
+          <button class="icon-btn">🔗</button><button class="icon-btn">🔔</button><button class="icon-btn leave" style="font-size:13px;width:auto;padding:0 8px">離開</button>
+        </div>
+        <div class="m-online"><button><span class="g"></span>👥 5 人在線</button></div>
+        <div class="messages">
+          <div class="msg"><span class="avatar" style="background:var(--n4)">華</span>
+            <div class="meta"><span class="who" style="color:var(--n4)">小華</span><span class="time">20:12</span></div>
+            <div class="text">今天晚上要不要一起讀第三章？</div>
+            <div class="reactions"><span class="react mine">👍 <b>3</b></span></div>
+          </div>
+          <div class="msg own"><span class="avatar" style="background:var(--n8)">明</span>
+            <div class="quote"><b style="color:var(--n4)">小華</b><span>今天晚上要不要一起讀第三章？</span></div>
+            <div class="meta"><span class="who" style="color:var(--n8)">小明</span><span class="you">（你）</span><span class="time">20:14</span></div>
+            <div class="text">讚，我九點準時上線</div>
+          </div>
+        </div>
+        <div class="toasts"><div class="toast">🟢 <span><b style="color:var(--n10)">阿凱</b> 進入了 <span class="room-n">週五讀書會</span></span></div></div>
+        <div class="composer">
+          <div class="input-box"><textarea rows="1" placeholder="輸入訊息…"></textarea><button class="send">➤</button></div>
+        </div>
+        <div class="keyboard"><div><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div><i style="flex:.6"></i><i style="flex:3"></i><i style="flex:.6"></i></div></div>
+      </div>
+      <div class="caption">輸入框固定在鍵盤正上方；☰ 的紅點代表其他房間有未讀</div>
+    </div>
+
+    <!-- 2. 房間抽屜 -->
+    <div>
+      <div class="frame phone">
+        <div class="m-top"><button class="icon-btn">☰</button><div class="title">🔒 週五讀書會</div></div>
+        <div class="messages"></div>
+        <div class="drawer">
+          <div class="panel rooms" style="border-right:0">
+            <div class="brand"><span class="logo"></span>匿名聊天室</div>
+            <h4>房間</h4>
+            <div class="room"><span class="hash">#</span><span class="name">大廳</span></div>
+            <div class="room active show-x"><span class="hash">🔒</span><span class="name">週五讀書會</span><button class="x">×</button></div>
+            <div class="room unread show-x"><span class="hash">🔒</span><span class="name">房間 k3f9</span><span class="badge">3</span><button class="x">×</button></div>
+            <button class="new-room">＋ 開新房間</button>
+            <div class="me-card"><span class="avatar" style="background:var(--n8)">明</span><div><div style="font-weight:600">小明</div><div style="font-size:11.5px;color:var(--text-3)">這是你</div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="caption">點 ☰ 從左邊滑出；點旁邊暗處關閉。手機上 × 一直顯示</div>
+    </div>
+
+    <!-- 3. 線上名單展開 -->
+    <div>
+      <div class="frame phone">
+        <div class="m-top"><button class="icon-btn">☰</button><div class="title">🔒 週五讀書會</div><button class="icon-btn">🔗</button><button class="icon-btn">🔔</button></div>
+        <div class="m-online"><button style="border-color:var(--accent-line);color:var(--text-1)"><span class="g"></span>👥 5 人在線 ▴</button></div>
+        <div class="messages"></div>
+        <div class="sheet-backdrop"></div>
+        <div class="sheet members" style="border-left:0">
+          <div class="member"><span class="avatar" style="background:var(--n8)">明</span><span class="nm" style="color:var(--n8)">小明 <span class="you">（你）</span></span></div>
+          <div class="member"><span class="avatar" style="background:var(--n4)">華</span><span class="nm" style="color:var(--n4)">小華</span></div>
+          <div class="member"><span class="avatar" style="background:var(--n11)">美</span><span class="nm" style="color:var(--n11)">小美</span></div>
+          <div class="member"><span class="avatar" style="background:var(--n6)">傑</span><span class="nm" style="color:var(--n6)">阿傑</span></div>
+          <div class="member hidden"><span class="avatar">洗</span><span class="nm">洗版仔</span><button class="unhide">取消隱藏</button></div>
+        </div>
+      </div>
+      <div class="caption">點「👥 5 人在線」往下展開；再點一次或點暗處收起</div>
+    </div>
+
+    <!-- 4. 長按 -->
+    <div>
+      <div class="frame phone">
+        <div class="m-top"><button class="icon-btn">☰</button><div class="title"># 大廳</div></div>
+        <div class="m-online"><button><span class="g"></span>👥 18 人在線</button></div>
+        <div class="messages">
+          <div class="msg"><span class="avatar" style="background:var(--n6)">傑</span>
+            <div class="meta"><span class="who" style="color:var(--n6)">阿傑</span><span class="time">20:15</span></div>
+            <div class="text">第三章的習題 3-7 有人會嗎</div>
+            <div class="reactions"><span class="react">😮 <b>2</b></span></div>
+          </div>
+        </div>
+        <div class="lp-dim"></div>
+        <div class="longpress">
+          <div class="emoji-row"><span>👍</span><span>❤️</span><span>😂</span><span>😮</span><span>😢</span></div>
+          <div class="item">↩ 回覆</div>
+          <div class="item" style="color:var(--text-2)">😮 小美、阿凱 按了</div>
+        </div>
+      </div>
+      <div class="caption">長按訊息：選表情、回覆、看誰按了表情</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section class="section">
+  <h2><span class="tag">7.6</span>分頁標題與提示音</h2>
+  <p class="sub">分頁在背景時，新訊息會讓標題出現未讀數並播放提示音；切回來後恢復。</p>
+  <div class="tabbar">
+    <div class="tab"><span class="fav"></span>(3) 匿名聊天室</div>
+    <div class="tab active"><span class="fav" style="background:#555"></span>其他網站</div>
+  </div>
+  <div class="tabbody">🔔 有新訊息時播放一聲短促、柔和的提示音（約 0.2 秒）。按聊天區頂端的 🔔 切換成 🔕 就不會響，設定會記住。被隱藏的人的訊息不算未讀，也不會響。</div>
+</section>
+
+</div>
+</body>
+</html>
