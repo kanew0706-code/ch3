@@ -180,6 +180,7 @@ flowchart LR
   "replyTo": {                 // 如果是回覆別人才有，沒有就省略
     "id": "91de…",             // 被回覆那則訊息的編號
     "nickname": "小華",
+    "color": "#7BDC6B",        // 被回覆者的名字顏色（引用區塊用）
     "excerpt": "今天晚上要不要一起…"   // 被回覆內容的前 50 字
   }
 }
@@ -522,16 +523,17 @@ ch3/                              ← 整個專案
 │  ├─ architecture.md             ← 本文件
 │  └─ design/                     ← /design 產出的設計稿
 ├─ public/
-│  └─ notify.mp3                  ← 提示音（不需要處理、直接放上網站的檔案放這裡）
+│  └─ favicon.svg                 ← 網站圖示（提示音改用程式產生，不需要音效檔）
 ├─ src/                           ← 所有程式碼
 │  ├─ main.tsx                    ← 程式起點
 │  ├─ App.tsx                     ← 決定顯示輸入代號畫面還是聊天畫面
 │  ├─ config.ts                   ← 讀取 Supabase 設定，決定用哪一版通訊員
 │  ├─ chat/                       ← 通訊相關（第 4.3、5 節）
 │  │  ├─ types.ts                 ← 第 5 節的資料格式
-│  │  ├─ ChatService.ts           ← 通訊員的規格
-│  │  ├─ LocalChatService.ts      ← 階段一：分頁互傳版
-│  │  ├─ SupabaseChatService.ts   ← 階段二：Supabase 版
+│  │  ├─ ChatService.ts           ← 通訊員的規格，以及每種傳輸方式要實作的「底層頻道」RawChannel
+│  │  ├─ createRoomConnection.ts  ← 把底層頻道包成通訊員：檢查資料、擋洗版、30 秒緩衝（兩版共用）
+│  │  ├─ LocalChatService.ts      ← 階段一：分頁互傳版（只實作 RawChannel）
+│  │  ├─ SupabaseChatService.ts   ← 階段二：Supabase 版（只要實作 RawChannel）
 │  │  ├─ validate.ts              ← 檢查收到的資料（第 9.1 節）
 │  │  └─ presenceGrace.ts         ← 30 秒緩衝規則（兩版共用）
 │  ├─ state/                      ← 記住目前狀態：身分、房間、訊息、未讀數、靜音、隱藏名單
