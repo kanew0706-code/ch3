@@ -36,7 +36,8 @@ export function whoReacted(s: ReactionSummary): string {
   return `${s.names.join('、')} 按了 ${s.emoji}`;
 }
 
-export function ReactionBar({ messageId, summary }: { messageId: string; summary: ReactionSummary[] }) {
+// 斷線中用 aria-disabled 而不是 disabled，滑鼠移上去仍看得到是誰按的
+export function ReactionBar({ messageId, summary, online }: { messageId: string; summary: ReactionSummary[]; online: boolean }) {
   if (summary.length === 0) return null;
   return (
     <div className="reactions">
@@ -46,6 +47,7 @@ export function ReactionBar({ messageId, summary }: { messageId: string; summary
           type="button"
           className={s.mine ? 'react react--mine' : 'react'}
           aria-pressed={s.mine}
+          aria-disabled={!online}
           aria-label={`${whoReacted(s)}，共 ${s.names.length} 人`}
           onClick={() => store.toggleReaction(messageId, s.emoji)}
         >

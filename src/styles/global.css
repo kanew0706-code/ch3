@@ -330,6 +330,7 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 .react:hover { border-color: var(--text-3); }
 .react--mine { border-color: var(--accent-line); background: var(--accent-soft); color: var(--text-1); }
+.react[aria-disabled="true"], .msg__emoji:disabled, .sheet__emoji:disabled { opacity: .45; cursor: not-allowed; }
 .react b { font-weight: 700; font-variant-numeric: tabular-nums; }
 .tooltip {
   position: absolute; bottom: calc(100% + 8px); left: 0; z-index: 5;

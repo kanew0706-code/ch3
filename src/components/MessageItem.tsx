@@ -14,6 +14,8 @@ interface Props {
   grouped: boolean;
   flash: boolean;
   touch: boolean;
+  /** 斷線中不能加表情 */
+  online: boolean;
   reactions: ReactionSummary[];
   onQuoteClick: (id: string) => void;
   onLongPress: (msg: ChatMessage, reactions: ReactionSummary[]) => void;
@@ -22,7 +24,7 @@ interface Props {
 const LONG_PRESS_MS = 500;
 
 export const MessageItem = memo(function MessageItem({
-  msg, at, own, grouped, flash, touch, reactions, onQuoteClick, onLongPress,
+  msg, at, own, grouped, flash, touch, online, reactions, onQuoteClick, onLongPress,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -103,7 +105,7 @@ export const MessageItem = memo(function MessageItem({
           )}
         </div>
 
-        <ReactionBar messageId={msg.id} summary={reactions} />
+        <ReactionBar messageId={msg.id} summary={reactions} online={online} />
       </div>
 
       {!touch && (
@@ -114,7 +116,7 @@ export const MessageItem = memo(function MessageItem({
           </button>
           <span className="msg__sep" aria-hidden="true" />
           {EMOJIS.map((e) => (
-            <button key={e} type="button" className="msg__emoji" aria-label={EMOJI_LABELS[e]} onClick={() => store.toggleReaction(msg.id, e)}>
+            <button key={e} type="button" className="msg__emoji" aria-label={EMOJI_LABELS[e]} disabled={!online} onClick={() => store.toggleReaction(msg.id, e)}>
               {e}
             </button>
           ))}

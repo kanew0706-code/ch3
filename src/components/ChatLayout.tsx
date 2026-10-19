@@ -138,7 +138,7 @@ export function ChatLayout({ state }: { state: ChatState }) {
           </div>
         )}
 
-        {room.status !== 'connected' && <ConnectionBanner />}
+        {room.status === 'reconnecting' && <ConnectionBanner />}
 
         <div className="chat__main">
           <MessageList room={room} myId={me.clientId} hidden={state.hidden} touch={touch} />

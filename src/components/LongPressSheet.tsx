@@ -9,10 +9,11 @@ interface Props {
   msg: ChatMessage;
   reactions: ReactionSummary[];
   isOwn: boolean;
+  online: boolean;
   onClose: () => void;
 }
 
-export function LongPressSheet({ msg, reactions, isOwn, onClose }: Props) {
+export function LongPressSheet({ msg, reactions, isOwn, online, onClose }: Props) {
   useEffect(() => {
     const esc = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
     document.addEventListener('keydown', esc);
@@ -33,6 +34,7 @@ export function LongPressSheet({ msg, reactions, isOwn, onClose }: Props) {
               className={mine.has(e) ? 'sheet__emoji sheet__emoji--mine' : 'sheet__emoji'}
               aria-label={EMOJI_LABELS[e]}
               aria-pressed={mine.has(e)}
+              disabled={!online}
               onClick={() => {
                 store.toggleReaction(msg.id, e);
                 onClose();

@@ -25,6 +25,7 @@ export function MessageList({ room, myId, hidden, touch }: Props) {
   const [flashId, setFlashId] = useState<string | null>(null);
   const [sheet, setSheet] = useState<{ msg: ChatMessage; reactions: ReactionSummary[] } | null>(null);
 
+  const online = room.status === 'connected';
   const items = room.items.filter((it) => it.kind === 'sys' || !hidden.includes(it.msg.clientId));
   const last = items[items.length - 1];
   const lastKey = last ? (last.kind === 'msg' ? last.msg.id : last.id) : '';
@@ -112,6 +113,7 @@ export function MessageList({ room, myId, hidden, touch }: Props) {
                 grouped={grouped}
                 flash={flashId === it.msg.id}
                 touch={touch}
+                online={online}
                 reactions={summarize(room.reactions[it.msg.id], myId, hidden)}
                 onQuoteClick={onQuoteClick}
                 onLongPress={onLongPress}
@@ -133,6 +135,7 @@ export function MessageList({ room, myId, hidden, touch }: Props) {
           msg={sheet.msg}
           reactions={summarize(room.reactions[sheet.msg.id], myId, hidden)}
           isOwn={sheet.msg.clientId === myId}
+          online={online}
           onClose={() => setSheet(null)}
         />
       )}

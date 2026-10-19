@@ -165,7 +165,7 @@ export class ChatStore {
   toggleReaction(messageId: string, emoji: Emoji): void {
     const { me, active } = this.state;
     const room = this.state.rooms[active];
-    if (!me || !room) return;
+    if (!me || !room || room.status !== 'connected') return;
     const on = !room.reactions[messageId]?.[emoji]?.[me.clientId];
     const ev: ReactionEvent = { messageId, emoji, clientId: me.clientId, nickname: me.nickname, on };
     this.applyReaction(active, ev);
@@ -242,7 +242,7 @@ export class ChatStore {
       members: [],
       reactions: {},
       unread: 0,
-      status: 'connected',
+      status: 'connecting',
       wasDisconnected: false,
       replyTo: null,
     };
@@ -285,7 +285,8 @@ export class ChatStore {
 
   private onStatus(roomId: string, status: ConnectionStatus): void {
     this.updateRoom(roomId, (r) => {
-      if (status === 'reconnecting') return { ...r, status, wasDisconnected: true };
+      // 從來沒連上過就不算「中斷期間」，連上後不插入灰字
+      if (status === 'reconnecting') return { ...r, status, wasDisconnected: r.wasDisconnected || r.status === 'connected' };
       if (r.wasDisconnected) {
         const sys: TimelineItem = { kind: 'sys', id: `sys-${++this.seq}`, text: '連線中斷期間的訊息無法顯示', at: Date.now() };
         return { ...r, status, wasDisconnected: false, items: pushItem(r.items, sys) };

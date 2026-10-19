@@ -13,7 +13,6 @@ class SupabaseRawChannel implements RawChannel {
   private channel: RealtimeChannel;
   private self: Member | null = null;
   private joined = false;
-  private everJoined = false;
   private closed = false;
   private queue: { event: string; payload: unknown }[] = [];
   private broadcastCb: (event: string, payload: unknown) => void = () => {};
@@ -85,15 +84,14 @@ class SupabaseRawChannel implements RawChannel {
     if (this.closed) return;
     if (status === 'SUBSCRIBED') {
       this.joined = true;
-      this.everJoined = true;
       // 重新連上後，伺服器那邊的在線登記已經沒了，要重新登記
       if (this.self) void this.channel.track(this.self);
       for (const q of this.queue.splice(0)) void this.channel.send({ type: 'broadcast', ...q });
       this.statusCb('connected');
     } else {
       this.joined = false;
-      // 第一次連線還沒成功前，畫面維持一般狀態，不顯示「連線中斷」
-      if (this.everJoined) this.statusCb('reconnecting');
+      // 包含第一次就連不上（例如 Supabase 專案被暫停）：一樣顯示「連線中斷」
+      this.statusCb('reconnecting');
     }
   }
 
