@@ -2,7 +2,13 @@
 
 不用登入的匿名即時聊天室。規格見 `docs/architecture.md`，畫面設計見 `docs/design.md`。
 
-目前是**階段一（展示模式）**：訊息只能在同一個瀏覽器的分頁之間傳遞，還沒有接上 Supabase。
+目前是**階段二**：透過 Supabase Realtime 即時傳訊。
+沒有設定 Supabase 時（沒有 `.env.local`），會自動改用**展示模式**：訊息只能在同一個瀏覽器的分頁之間傳遞。
+
+## Supabase 設定
+
+複製 `.env.example` 成 `.env.local`，填入 Project URL 和 publishable key（見架構文件第 8 節）。
+上線版本讀的是 repo 的 **Settings → Secrets and variables → Actions → Variables**。
 
 ## 在自己電腦上執行
 
