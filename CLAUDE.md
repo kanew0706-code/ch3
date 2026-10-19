@@ -6,9 +6,9 @@
 - 先讀 `docs/architecture.md`。功能規格、通訊約定、畫面清單、驗證清單都以這份文件為準。
 - 需求的原始說明在 `docs/requirements.md`。
 
-## 目前進度：階段一
-- 只做前端，用 `LocalChatService`（BroadcastChannel）讓同一個瀏覽器的分頁互聊。
-- **還不要接 Supabase**，也不要安裝 Supabase 相關套件。
+## 目前進度：階段二
+- 已接上 Supabase：`SupabaseChatService`（Realtime Broadcast + Presence）。有 `VITE_SUPABASE_*` 設定時使用，沒有時自動退回 `LocalChatService`（展示模式）。
+- 只用 Realtime，不建資料表、不用 Supabase 登入、不用 Supabase CLI。
 - 畫面元件只能透過 `ChatService` 介面通訊，不可直接呼叫 BroadcastChannel 或 Supabase（見架構文件 4.3 節）。
 
 ## 金鑰規則
