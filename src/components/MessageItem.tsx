@@ -27,6 +27,22 @@ export const MessageItem = memo(function MessageItem({
   msg, at, own, grouped, flash, touch, online, reactions, onQuoteClick, onLongPress,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
+  // 「⋯」按鈕打開的操作列：滑鼠移開也不會消失，點旁邊或按 Esc 才關
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const rootRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (!actionsOpen) return;
+    const close = (e: Event) => {
+      if (e instanceof KeyboardEvent ? e.key === 'Escape' : !rootRef.current?.contains(e.target as Node)) setActionsOpen(false);
+    };
+    document.addEventListener('pointerdown', close);
+    document.addEventListener('keydown', close);
+    return () => {
+      document.removeEventListener('pointerdown', close);
+      document.removeEventListener('keydown', close);
+    };
+  }, [actionsOpen]);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const cancelPress = () => {
@@ -55,9 +71,10 @@ export const MessageItem = memo(function MessageItem({
   if (grouped) cls.push('msg--grouped');
   if (flash) cls.push('msg--flash');
   if (touch) cls.push('msg--touch');
+  if (actionsOpen) cls.push('msg--actions-open');
 
   return (
-    <article id={`msg-${msg.id}`} className={cls.join(' ')} aria-label={`${msg.nickname} ${formatTime(at)}`} {...touchHandlers}>
+    <article ref={rootRef} id={`msg-${msg.id}`} className={cls.join(' ')} aria-label={`${msg.nickname} ${formatTime(at)}`} {...touchHandlers}>
       {grouped ? (
         <time className="msg__side-time" dateTime={new Date(at).toISOString()}>
           {formatTime(at)}
@@ -109,7 +126,19 @@ export const MessageItem = memo(function MessageItem({
       </div>
 
       {!touch && (
-        <div className="msg__actions" role="toolbar" aria-label="訊息操作">
+        <button
+          type="button"
+          className="msg__more"
+          aria-label="訊息操作：回覆、表情"
+          aria-expanded={actionsOpen}
+          onClick={() => setActionsOpen((v) => !v)}
+        >
+          <Icon name="more" size={18} />
+        </button>
+      )}
+
+      {!touch && (
+        <div className="msg__actions" role="toolbar" aria-label="訊息操作" onClick={() => setActionsOpen(false)}>
           <button type="button" className="msg__reply" onClick={() => store.setReplyTo(msg)}>
             <Icon name="reply" size={14} />
             回覆

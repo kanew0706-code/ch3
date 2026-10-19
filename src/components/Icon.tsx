@@ -75,6 +75,7 @@ const PATHS = {
   ),
   chevronUp: <path d="M6 15l6-6 6 6" />,
   chevronDown: <path d="M6 9l6 6 6-6" />,
+  more: <path d="M5 12h.01M12 12h.01M19 12h.01" />,
 };
 
 export type IconName = keyof typeof PATHS;

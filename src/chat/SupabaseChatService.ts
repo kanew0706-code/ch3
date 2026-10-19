@@ -8,6 +8,10 @@ import type { ConnectionStatus, Me, Member } from './types';
 const EVENTS = ['message', 'reaction', 'bye'] as const;
 /** 還沒連上前送出的東西先排隊，連上後再送 */
 const MAX_QUEUE = 20;
+/** 登記在線失敗（逾時、被拒）時，隔多久重試 */
+const TRACK_RETRY_MS = 2_000;
+/** 登記後多久檢查：伺服器的在線名單裡真的有自己嗎？沒有就重新登記 */
+const SELF_CHECK_MS = 5_000;
 
 class SupabaseRawChannel implements RawChannel {
   private channel: RealtimeChannel;
@@ -15,6 +19,8 @@ class SupabaseRawChannel implements RawChannel {
   private joined = false;
   private closed = false;
   private queue: { event: string; payload: unknown }[] = [];
+  private retryTimer: ReturnType<typeof setTimeout> | null = null;
+  private checkTimer: ReturnType<typeof setTimeout> | null = null;
   private broadcastCb: (event: string, payload: unknown) => void = () => {};
   private presenceCb: (present: unknown[]) => void = () => {};
   private statusCb: (s: ConnectionStatus) => void = () => {};
@@ -37,6 +43,7 @@ class SupabaseRawChannel implements RawChannel {
     this.channel.on('presence', { event: 'sync' }, () => {
       const state = this.channel.presenceState() as Record<string, unknown[]>;
       this.presenceCb(Object.values(state).flat());
+      this.scheduleSelfCheck();
     });
     this.channel.subscribe((status) => this.onSubscribeStatus(status));
     document.addEventListener('visibilitychange', this.onWake);
@@ -57,11 +64,12 @@ class SupabaseRawChannel implements RawChannel {
 
   track(member: Member): void {
     this.self = member;
-    if (this.joined) void this.channel.track(member);
+    if (this.joined) void this.doTrack();
   }
 
   untrack(): void {
     this.self = null;
+    this.clearTimers();
     if (this.joined) void this.channel.untrack();
   }
 
@@ -75,6 +83,7 @@ class SupabaseRawChannel implements RawChannel {
 
   close(): void {
     this.closed = true;
+    this.clearTimers();
     document.removeEventListener('visibilitychange', this.onWake);
     window.removeEventListener('online', this.onWake);
     void this.client.removeChannel(this.channel);
@@ -85,7 +94,7 @@ class SupabaseRawChannel implements RawChannel {
     if (status === 'SUBSCRIBED') {
       this.joined = true;
       // 重新連上後，伺服器那邊的在線登記已經沒了，要重新登記
-      if (this.self) void this.channel.track(this.self);
+      if (this.self) void this.doTrack();
       for (const q of this.queue.splice(0)) void this.channel.send({ type: 'broadcast', ...q });
       this.statusCb('connected');
     } else {
@@ -93,6 +102,39 @@ class SupabaseRawChannel implements RawChannel {
       // 包含第一次就連不上（例如 Supabase 專案被暫停）：一樣顯示「連線中斷」
       this.statusCb('reconnecting');
     }
+  }
+
+  // 登記在線。失敗時訊息照樣收得到，但別人的名單上不會有自己，所以一定要重試
+  private async doTrack(): Promise<void> {
+    if (this.retryTimer) clearTimeout(this.retryTimer);
+    this.retryTimer = null;
+    if (!this.self || !this.joined || this.closed) return;
+    const result = await this.channel.track(this.self);
+    if (this.closed || !this.self || !this.joined) return;
+    if (result !== 'ok') {
+      console.warn('[anonchat] 登記在線失敗，稍後重試：', result);
+      this.retryTimer = setTimeout(() => void this.doTrack(), TRACK_RETRY_MS);
+      return;
+    }
+    this.scheduleSelfCheck();
+  }
+
+  private scheduleSelfCheck(): void {
+    if (this.checkTimer || !this.self || !this.joined || this.closed) return;
+    this.checkTimer = setTimeout(() => {
+      this.checkTimer = null;
+      if (!this.self || !this.joined || this.closed) return;
+      if (!(this.self.clientId in this.channel.presenceState())) {
+        console.warn('[anonchat] 伺服器的在線名單裡沒有自己，重新登記');
+        void this.doTrack();
+      }
+    }, SELF_CHECK_MS);
+  }
+
+  private clearTimers(): void {
+    if (this.retryTimer) clearTimeout(this.retryTimer);
+    if (this.checkTimer) clearTimeout(this.checkTimer);
+    this.retryTimer = this.checkTimer = null;
   }
 
   // 手機從背景回來、網路恢復時，不等重試計時器，馬上試著連線

@@ -343,12 +343,21 @@ ul { list-style: none; margin: 0; padding: 0; }
 .msg--touch .tooltip { display: none; }
 
 .msg__actions {
-  position: absolute; right: 20px; top: -16px; z-index: 3;
+  position: absolute; right: 48px; top: -16px; z-index: 3;
   display: flex; align-items: center; gap: 2px; padding: 3px;
   background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
   opacity: 0; pointer-events: none; transition: opacity 120ms;
 }
-.msg:hover .msg__actions, .msg:focus-within .msg__actions { opacity: 1; pointer-events: auto; }
+.msg:hover .msg__actions, .msg:focus-within .msg__actions, .msg--actions-open .msg__actions { opacity: 1; pointer-events: auto; }
+/* 一直看得到的「⋯」：不用先把滑鼠移上去，也知道訊息可以回覆、加表情 */
+.msg:not(.msg--touch) .msg__body { padding-right: 28px; }
+.msg__more {
+  position: absolute; right: 14px; top: 6px; width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 0; border-radius: 8px; background: transparent; color: var(--text-3); opacity: 0.7;
+  transition: background 120ms, color 120ms, opacity 120ms;
+}
+.msg__more:hover, .msg__more[aria-expanded="true"] { background: var(--bg-4); color: var(--text-1); opacity: 1; }
 .msg__actions button { height: 30px; border: 0; border-radius: 7px; background: transparent; }
 .msg__actions button:hover { background: var(--bg-4); }
 .msg__reply { padding: 0 10px; font-size: 13px; color: var(--text-2b); display: inline-flex; align-items: center; gap: 6px; }
