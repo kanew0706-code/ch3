@@ -61,4 +61,5 @@ export interface ByeEvent {
   clientId: string;
 }
 
-export type ConnectionStatus = 'connected' | 'reconnecting';
+/** connecting = 剛進入、還沒連上（不顯示中斷提示，但不能送出） */
+export type ConnectionStatus = 'connecting' | 'connected' | 'reconnecting';
